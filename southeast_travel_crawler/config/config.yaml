@@ -1,0 +1,1294 @@
+# 東南旅遊機票資料爬蟲系統配置檔
+
+# API 配置
+api:
+  # GraphQL API 端點 URL
+  endpoint_url: "https://gql.settour.com.tw/graphql"
+  # API 認證令牌（如需要）
+  auth_token: ""
+  # 請求超時時間（秒）
+  timeout: 30
+  # 使用者代理
+  user_agent: "Chromium\";v=\"134\", \"Not:A-Brand\";v=\"24\", \"Google Chrome\";v=\"134\""
+  # API 來源頁面
+  origin: "https://flight.settour.com.tw"
+  # 引用頁面
+  referer: "https://flight.settour.com.tw/"
+  # 調試模式
+  debug_request: true
+  # 自定義請求標頭
+  headers:
+    accept: "*/*"
+    accept-language: "zh-TW,zh;q=0.9"
+    content-type: "application/json"
+    priority: "u=1, i"
+    sec-ch-ua: "\"Chromium\";v=\"134\", \"Not:A-Brand\";v=\"24\", \"Google Chrome\";v=\"134\""
+    sec-ch-ua-mobile: "?0"
+    sec-ch-ua-platform: "\"Windows\""
+    sec-fetch-dest: "empty"
+    sec-fetch-mode: "cors"
+    sec-fetch-site: "same-site"
+
+# 重試策略
+retry:
+  # 最大重試次數
+  max_attempts: 3
+  # 重試間隔（秒）
+  interval: 5
+  # 重試間隔增長因子
+  backoff_factor: 2.0
+  # 需要重試的錯誤類型
+  retry_on_errors:
+    - TimeoutException
+    - StaleElementReferenceException
+    - WebDriverException
+
+# 存儲配置
+storage:
+  # Google Cloud Storage 配置
+  cloud_storage:
+    # GCS 桶名稱
+    bucket_name: "testing-settour-flight-data-lake-bucket"
+    # 數據存儲路徑模板，支持日期格式化
+    path_template: "flights/{flight_number}/{date:%Y/%m/%d}/"
+    # 檔案名模板
+    file_name_template: "flight_data_{timestamp}.json"
+  
+  # BigQuery 配置
+  bigquery:
+    # 項目 ID
+    project_id: "testing-cola-rd"
+    # 數據集 ID
+    dataset_id: "economy"
+    # 表格 ID
+    table_id: "New_settour_air_tickets_price"
+
+# 任務管理設置
+task:
+  # 最大並行任務數
+  max_concurrent_tasks: 3
+  # 任務隊列大小
+  queue_size: 100
+  # 批次任務超時時間（分鐘）
+  task_timeout: 120
+
+# 日誌配置
+logging:
+  # 日誌級別: DEBUG, INFO, WARNING, ERROR, CRITICAL
+  level: WARNING
+  # 日誌文件路徑
+  file_path: "logs/crawler.log"
+  # 日誌輪轉配置
+  rotation:
+    # 是否啟用日誌輪轉
+    enabled: true
+    # 單個日誌文件最大大小（MB）
+    max_size_mb: 10
+    # 保留的日誌文件數量
+    backup_count: 5
+
+# 東南旅遊網站設置
+website:
+  # 基礎URL
+  base_url: "https://flight.settour.com.tw/"
+  # 機票搜索頁面URL
+  flight_search_url: "https://flight.settour.com.tw/"
+  # 加載更多按鈕的選擇器（如果有）
+  load_more_button_selector: ".more-btn"
+  # 航班信息按鈕的選擇器（如果有）
+  flight_info_button_selector: ".flight-info"
+  # 機票卡片的選擇器（如果有）
+  flight_card_selector: ".flight-item"
+ 
+# 單個爬蟲任務
+flight_tasks:
+  - name: "範例：台北到新加坡 2025-05-19出發 2025-05-20回程"
+    url_params:
+      DepCity1: "TPE" # 出發機場
+      ArrCity1: "SIN" # 抵達機場
+      DepCountry1: "TW" # 出發國家
+      ArrCountry1: "SG" # 抵達國家
+      DepDate1: "2025-07-17" # 出發日期
+      DepDate2: "2025-07-25" # 回程日期
+      Rtow: 1 # 來回程
+
+# 固定月份日期爬蟲任務
+flight_tasks_fixed_month:
+  - name: "範例： 兩個月後的台北到新加坡該月5號出發10號回程"
+    url_params:
+      Month: 2 # 幾個月後
+      DepCity1: "TPE" # 出發機場
+      ArrCity1: "SIN" # 抵達機場
+      DepCountry1: "TW" # 出發國家
+      ArrCountry1: "SG" # 抵達國家
+      DepDate1: "5" # 出發日期
+      DepDate2: "10" # 回程日期
+      Rtow: 1 # 來回程
+
+  - name: "範例： 六個月後的台北到新加坡該月24號出發28號回程"
+    url_params:
+      Month: 6 # 幾個月後
+      DepCity1: "TPE" # 出發機場
+      ArrCity1: "SIN" # 抵達機場
+      DepCountry1: "TW" # 出發國家
+      ArrCountry1: "SG" # 抵達國家
+      DepDate1: "24" # 出發日期
+      DepDate2: "28" # 回程日期
+      Rtow: 1 # 來回程
+
+  # 東北亞航線 - 2個月後固定日期
+  - name: "東北亞：台北到東京成田固定日期 (2個月後5號出發10號回程)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "NRT"
+      DepCountry1: "TW"
+      ArrCountry1: "JP"
+      DepDate1: "5"
+      DepDate2: "10"
+      Rtow: 1
+
+  - name: "東北亞：台北到東京羽田固定日期 (2個月後5號出發10號回程)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "HND"
+      DepCountry1: "TW"
+      ArrCountry1: "JP"
+      DepDate1: "5"
+      DepDate2: "10"
+      Rtow: 1
+
+  - name: "東北亞：台北到大阪關西固定日期 (2個月後5號出發10號回程)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "KIX"
+      DepCountry1: "TW"
+      ArrCountry1: "JP"
+      DepDate1: "5"
+      DepDate2: "10"
+      Rtow: 1
+
+  - name: "東北亞：台北到大阪伊丹固定日期 (2個月後5號出發10號回程)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "ITM"
+      DepCountry1: "TW"
+      ArrCountry1: "JP"
+      DepDate1: "5"
+      DepDate2: "10"
+      Rtow: 1
+
+  - name: "東北亞：台北到首爾仁川固定日期 (2個月後5號出發10號回程)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "ICN"
+      DepCountry1: "TW"
+      ArrCountry1: "KR"
+      DepDate1: "5"
+      DepDate2: "10"
+      Rtow: 1
+
+  - name: "東北亞：台北到首爾金浦固定日期 (2個月後5號出發10號回程)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "GMP"
+      DepCountry1: "TW"
+      ArrCountry1: "KR"
+      DepDate1: "5"
+      DepDate2: "10"
+      Rtow: 1
+
+  # 東南亞航線 - 2個月後固定日期
+  - name: "東南亞：台北到曼谷蘇凡納布固定日期 (2個月後5號出發10號回程)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "BKK"
+      DepCountry1: "TW"
+      ArrCountry1: "TH"
+      DepDate1: "5"
+      DepDate2: "10"
+      Rtow: 1
+
+  - name: "東南亞：台北到曼谷廊曼固定日期 (2個月後5號出發10號回程)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "DMK"
+      DepCountry1: "TW"
+      ArrCountry1: "TH"
+      DepDate1: "5"
+      DepDate2: "10"
+      Rtow: 1
+
+  - name: "東南亞：台北到新加坡固定日期 (2個月後5號出發10號回程)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "SIN"
+      DepCountry1: "TW"
+      ArrCountry1: "SG"
+      DepDate1: "5"
+      DepDate2: "10"
+      Rtow: 1
+
+  # 美加線 - 2個月後固定日期
+  - name: "美加線：台北到舊金山固定日期 (2個月後5號出發10號回程)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "SFO"
+      DepCountry1: "TW"
+      ArrCountry1: "US"
+      DepDate1: "5"
+      DepDate2: "10"
+      Rtow: 1
+
+  - name: "美加線：台北到洛杉磯固定日期 (2個月後5號出發10號回程)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "LAX"
+      DepCountry1: "TW"
+      ArrCountry1: "US"
+      DepDate1: "5"
+      DepDate2: "10"
+      Rtow: 1
+
+  - name: "美加線：台北到西雅圖固定日期 (2個月後5號出發10號回程)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "SEA"
+      DepCountry1: "TW"
+      ArrCountry1: "US"
+      DepDate1: "5"
+      DepDate2: "10"
+      Rtow: 1
+
+  # 歐洲線 - 2個月後固定日期
+  - name: "歐洲線：台北到倫敦希斯洛機場固定日期 (2個月後5號出發10號回程)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "LHR"
+      DepCountry1: "TW"
+      ArrCountry1: "GB"
+      DepDate1: "5"
+      DepDate2: "10"
+      Rtow: 1
+
+  - name: "歐洲線：台北到倫敦蓋特威克機場固定日期 (2個月後5號出發10號回程)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "LGW"
+      DepCountry1: "TW"
+      ArrCountry1: "GB"
+      DepDate1: "5"
+      DepDate2: "10"
+      Rtow: 1
+
+  - name: "歐洲線：台北到倫敦城市機場固定日期 (2個月後5號出發10號回程)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "LCY"
+      DepCountry1: "TW"
+      ArrCountry1: "GB"
+      DepDate1: "5"
+      DepDate2: "10"
+      Rtow: 1
+
+  - name: "歐洲線：台北到倫敦盧頓機場固定日期 (2個月後5號出發10號回程)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "LTN"
+      DepCountry1: "TW"
+      ArrCountry1: "GB"
+      DepDate1: "5"
+      DepDate2: "10"
+      Rtow: 1
+
+  - name: "歐洲線：台北到倫敦斯坦斯特德機場固定日期 (2個月後5號出發10號回程)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "STN"
+      DepCountry1: "TW"
+      ArrCountry1: "GB"
+      DepDate1: "5"
+      DepDate2: "10"
+      Rtow: 1
+
+  - name: "歐洲線：台北到倫敦南安普敦機場固定日期 (2個月後5號出發10號回程)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "SEN"
+      DepCountry1: "TW"
+      ArrCountry1: "GB"
+      DepDate1: "5"
+      DepDate2: "10"
+      Rtow: 1
+
+  - name: "歐洲線：台北到巴黎戴高樂機場固定日期 (2個月後5號出發10號回程)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "CDG"
+      DepCountry1: "TW"
+      ArrCountry1: "FR"
+      DepDate1: "5"
+      DepDate2: "10"
+      Rtow: 1
+
+  - name: "歐洲線：台北到巴黎奧利機場固定日期 (2個月後5號出發10號回程)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "ORY"
+      DepCountry1: "TW"
+      ArrCountry1: "FR"
+      DepDate1: "5"
+      DepDate2: "10"
+      Rtow: 1
+
+  - name: "歐洲線：台北到巴黎博韋-提耶機場固定日期 (2個月後5號出發10號回程)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "BVA"
+      DepCountry1: "TW"
+      ArrCountry1: "FR"
+      DepDate1: "5"
+      DepDate2: "10"
+      Rtow: 1
+
+  - name: "歐洲線：台北到阿姆斯特丹固定日期 (2個月後5號出發10號回程)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "AMS"
+      DepCountry1: "TW"
+      ArrCountry1: "NL"
+      DepDate1: "5"
+      DepDate2: "10"
+      Rtow: 1
+
+  # 大陸線 - 2個月後固定日期
+  - name: "大陸線：台北到上海浦東國際機場固定日期 (2個月後5號出發10號回程)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "PVG"
+      DepCountry1: "TW"
+      ArrCountry1: "CN"
+      DepDate1: "5"
+      DepDate2: "10"
+      Rtow: 1
+
+  - name: "大陸線：台北到上海虹橋機場固定日期 (2個月後5號出發10號回程)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "SHA"
+      DepCountry1: "TW"
+      ArrCountry1: "CN"
+      DepDate1: "5"
+      DepDate2: "10"
+      Rtow: 1
+
+  - name: "大陸線：台北到北京首都國際機場固定日期 (2個月後5號出發10號回程)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "PEK"
+      DepCountry1: "TW"
+      ArrCountry1: "CN"
+      DepDate1: "5"
+      DepDate2: "10"
+      Rtow: 1
+
+  - name: "大陸線：台北到北京大興國際機場固定日期 (2個月後5號出發10號回程)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "PKX"
+      DepCountry1: "TW"
+      ArrCountry1: "CN"
+      DepDate1: "5"
+      DepDate2: "10"
+      Rtow: 1
+
+  # 港澳線 - 2個月後固定日期
+  - name: "港澳線：台北到香港固定日期 (2個月後5號出發10號回程)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "HKG"
+      DepCountry1: "TW"
+      ArrCountry1: "HK"
+      DepDate1: "5"
+      DepDate2: "10"
+      Rtow: 1
+
+  - name: "港澳線：台北到澳門固定日期 (2個月後5號出發10號回程)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "MFM"
+      DepCountry1: "TW"
+      ArrCountry1: "MO"
+      DepDate1: "5"
+      DepDate2: "10"
+      Rtow: 1
+
+
+  # 東北亞航線 - 6個月後固定日期
+  - name: "東北亞：台北到東京成田固定日期 (6個月後24號出發28號回程)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "NRT"
+      DepCountry1: "TW"
+      ArrCountry1: "JP"
+      DepDate1: "24"
+      DepDate2: "28"
+      Rtow: 1
+    
+  - name: "東北亞：台北到東京羽田固定日期 (6個月後24號出發28號回程)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "HND"
+      DepCountry1: "TW"
+      ArrCountry1: "JP"
+      DepDate1: "24"
+      DepDate2: "28"
+      Rtow: 1
+
+  - name: "東北亞：台北到大阪關西固定日期 (6個月後24號出發28號回程)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "KIX"
+      DepCountry1: "TW"
+      ArrCountry1: "JP"
+      DepDate1: "24"
+      DepDate2: "28"
+      Rtow: 1
+    
+  - name: "東北亞：台北到大阪伊丹固定日期 (6個月後24號出發28號回程)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "ITM"
+      DepCountry1: "TW"
+      ArrCountry1: "JP"
+      DepDate1: "24"
+      DepDate2: "28"
+      Rtow: 1
+
+  - name: "東北亞：台北到首爾仁川固定日期 (6個月後24號出發28號回程)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "ICN"
+      DepCountry1: "TW"
+      ArrCountry1: "KR"
+      DepDate1: "24"
+      DepDate2: "28"
+      Rtow: 1
+    
+  - name: "東北亞：台北到首爾金浦固定日期 (6個月後24號出發28號回程)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "GMP"
+      DepCountry1: "TW"
+      ArrCountry1: "KR"
+      DepDate1: "24"
+      DepDate2: "28"
+      Rtow: 1
+
+  # 東南亞航線 - 6個月後固定日期
+  - name: "東南亞：台北到曼谷蘇凡納布固定日期 (6個月後24號出發28號回程)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "BKK"
+      DepCountry1: "TW"
+      ArrCountry1: "TH"
+      DepDate1: "24"
+      DepDate2: "28"
+      Rtow: 1
+
+  - name: "東南亞：台北到曼谷廊曼固定日期 (6個月後24號出發28號回程)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "DMK"
+      DepCountry1: "TW"
+      ArrCountry1: "TH"
+      DepDate1: "24"
+      DepDate2: "28"
+      Rtow: 1
+
+  - name: "東南亞：台北到新加坡樟宜固定日期 (6個月後24號出發28號回程)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "SIN"
+      DepCountry1: "TW"
+      ArrCountry1: "SG"
+      DepDate1: "24"
+      DepDate2: "28"
+      Rtow: 1
+
+  # 美加線 - 6個月後固定日期
+  - name: "美加線：台北到舊金山國際固定日期 (6個月後24號出發28號回程)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "SFO"
+      DepCountry1: "TW"
+      ArrCountry1: "US"
+      DepDate1: "24"
+      DepDate2: "28"
+      Rtow: 1
+
+  - name: "美加線：台北到洛杉磯國際固定日期 (6個月後24號出發28號回程)"
+    url_params: 
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "LAX"
+      DepCountry1: "TW"
+      ArrCountry1: "US"
+      DepDate1: "24"
+      DepDate2: "28"
+      Rtow: 1
+
+  - name: "美加線：台北到西雅圖國際固定日期 (6個月後24號出發28號回程)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "SEA"
+      DepCountry1: "TW"
+      ArrCountry1: "US"
+      DepDate1: "24"
+      DepDate2: "28"
+      Rtow: 1
+
+  # 歐洲線 - 6個月後固定日期
+  - name: "歐洲線：台北到倫敦希斯洛固定日期 (6個月後24號出發28號回程)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "LHR"
+      DepCountry1: "TW"
+      ArrCountry1: "GB"
+      DepDate1: "24"
+      DepDate2: "28"
+      Rtow: 1
+
+  - name: "歐洲線：台北到倫敦蓋特威克固定日期 (6個月後24號出發28號回程)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "LGW"
+      DepCountry1: "TW"
+      ArrCountry1: "GB"
+      DepDate1: "24"
+      DepDate2: "28"
+      Rtow: 1
+
+  - name: "歐洲線：台北到倫敦城市機場固定日期 (6個月後24號出發28號回程)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "LCY"
+      DepCountry1: "TW"
+      ArrCountry1: "GB"
+      DepDate1: "24"
+      DepDate2: "28"
+      Rtow: 1
+
+  - name: "歐洲線：台北到盧頓機場固定日期 (6個月後24號出發28號回程)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "LTN"
+      DepCountry1: "TW"
+      ArrCountry1: "GB"
+      DepDate1: "24"
+      DepDate2: "28"
+      Rtow: 1
+    
+  - name: "歐洲線：台北到斯坦斯特德機場固定日期 (6個月後24號出發28號回程)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "STN"
+      DepCountry1: "TW"
+      ArrCountry1: "GB"
+      DepDate1: "24"
+      DepDate2: "28"
+      Rtow: 1
+
+  - name: "歐洲線：台北到南安普敦機場固定日期 (6個月後24號出發28號回程)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "SEN"
+      DepCountry1: "TW"
+      ArrCountry1: "GB"
+      DepDate1: "24"
+      DepDate2: "28"
+      Rtow: 1
+    
+  - name: "歐洲線：台北到巴黎戴高樂固定日期 (6個月後24號出發28號回程)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "CDG"
+      DepCountry1: "TW"
+      ArrCountry1: "FR"
+      DepDate1: "24"
+      DepDate2: "28"
+      Rtow: 1
+
+  - name: "歐洲線：台北到巴黎奧利固定日期 (6個月後24號出發28號回程)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "ORY"
+      DepCountry1: "TW"
+      ArrCountry1: "FR"
+      DepDate1: "24"
+      DepDate2: "28"
+      Rtow: 1
+
+  - name: "歐洲線：台北到巴黎博韋機場固定日期 (6個月後24號出發28號回程)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "BVA"
+      DepCountry1: "TW"
+      ArrCountry1: "FR"
+      DepDate1: "24"
+      DepDate2: "28"
+      Rtow: 1
+
+  - name: "歐洲線：台北到阿姆斯特丹固定日期 (6個月後24號出發28號回程)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "AMS"
+      DepCountry1: "TW"
+      ArrCountry1: "NL"
+      DepDate1: "24"
+      DepDate2: "28"
+      Rtow: 1
+
+  # 大陸線 - 6個月後固定日期
+  - name: "大陸線：台北到上海浦東固定日期 (6個月後24號出發28號回程)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "PVG"
+      DepCountry1: "TW"
+      ArrCountry1: "CN"
+      DepDate1: "24"
+      DepDate2: "28"
+      Rtow: 1
+    
+  - name: "大陸線：台北到上海虹橋固定日期 (6個月後24號出發28號回程)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "SHA"
+      DepCountry1: "TW"
+      ArrCountry1: "CN"
+      DepDate1: "24"
+      DepDate2: "28"
+      Rtow: 1
+
+  - name: "大陸線：台北到北京首都固定日期 (6個月後24號出發28號回程)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "PEK"
+      DepCountry1: "TW"
+      ArrCountry1: "CN"
+      DepDate1: "24"
+      DepDate2: "28"
+      Rtow: 1
+
+  - name: "大陸線：台北到北京大興固定日期 (6個月後24號出發28號回程)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "PKX"
+      DepCountry1: "TW"
+      ArrCountry1: "CN"
+      DepDate1: "24"
+      DepDate2: "28"
+      Rtow: 1
+
+  # 港澳線 - 6個月後固定日期
+  - name: "港澳線：台北到香港固定日期 (6個月後24號出發28號回程)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "HKG"
+      DepCountry1: "TW"
+      ArrCountry1: "HK"
+      DepDate1: "24"
+      DepDate2: "28"
+      Rtow: 1
+
+  - name: "港澳線：台北到澳門固定日期 (6個月後24號出發28號回程)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "MFM"
+      DepCountry1: "TW"
+      ArrCountry1: "MO"
+      DepDate1: "24"
+      DepDate2: "28"
+      Rtow: 1
+
+
+# 節日爬蟲任務
+flight_tasks_holidays:
+  - name: "範例： 四個月後的台北到新加坡節日"
+    url_params:
+      Month: 4 # 幾個月後
+      DepCity1: "TPE" # 出發機場
+      ArrCity1: "SIN" # 抵達機場
+      DepCountry1: "TW" # 出發國家
+      ArrCountry1: "SG" # 抵達國家
+      Rtow: 1 # 來回程
+
+  # 東北亞航線 - 2個月後
+  - name: "東北亞：台北到東京成田節日 (2個月後)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "NRT"
+      DepCountry1: "TW"
+      ArrCountry1: "JP"
+      Rtow: 1
+
+  - name: "東北亞：台北到東京羽田節日 (2個月後)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "HND"
+      DepCountry1: "TW"
+      ArrCountry1: "JP"
+      Rtow: 1
+
+  - name: "東北亞：台北到大阪關西節日 (2個月後)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "KIX"
+      DepCountry1: "TW"
+      ArrCountry1: "JP"
+      Rtow: 1
+
+  - name: "東北亞：台北到大阪伊丹節日 (2個月後)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "ITM"
+      DepCountry1: "TW"
+      ArrCountry1: "JP"
+      Rtow: 1
+
+  - name: "東北亞：台北到首爾仁川節日 (2個月後)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "ICN"
+      DepCountry1: "TW"
+      ArrCountry1: "KR"
+      Rtow: 1
+
+  - name: "東北亞：台北到首爾金浦節日 (2個月後)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "GMP"
+      DepCountry1: "TW"
+      ArrCountry1: "KR"
+      Rtow: 1
+
+  # 東南亞航線 - 2個月後
+  - name: "東南亞：台北到曼谷蘇凡納布節日 (2個月後)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "BKK"
+      DepCountry1: "TW"
+      ArrCountry1: "TH"
+      Rtow: 1
+
+  - name: "東南亞：台北到曼谷廊曼節日 (2個月後)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "DMK"
+      DepCountry1: "TW"
+      ArrCountry1: "TH"
+      Rtow: 1
+
+  - name: "東南亞：台北到新加坡節日 (2個月後)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "SIN"
+      DepCountry1: "TW"
+      ArrCountry1: "SG"
+      Rtow: 1
+
+  # 美加線 - 2個月後
+  - name: "美加線：台北到舊金山節日 (2個月後)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "SFO"
+      DepCountry1: "TW"
+      ArrCountry1: "US"
+      Rtow: 1
+
+  - name: "美加線：台北到洛杉磯節日 (2個月後)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "LAX"
+      DepCountry1: "TW"
+      ArrCountry1: "US"
+      Rtow: 1
+
+  - name: "美加線：台北到西雅圖節日 (2個月後)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "SEA"
+      DepCountry1: "TW"
+      ArrCountry1: "US"
+      Rtow: 1
+
+  # 歐洲線 - 2個月後
+  - name: "歐洲線：台北到倫敦希斯洛節日 (2個月後)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "LHR"
+      DepCountry1: "TW"
+      ArrCountry1: "GB"
+      Rtow: 1
+
+  - name: "歐洲線：台北到倫敦蓋特威克節日 (2個月後)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "LGW"
+      DepCountry1: "TW"
+      ArrCountry1: "GB"
+      Rtow: 1
+
+  - name: "歐洲線：台北到倫敦城市機場節日 (2個月後)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "LCY"
+      DepCountry1: "TW"
+      ArrCountry1: "GB"
+      Rtow: 1
+
+  - name: "歐洲線：台北到倫敦盧頓節日 (2個月後)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "LTN"
+      DepCountry1: "TW"
+      ArrCountry1: "GB"
+      Rtow: 1
+
+  - name: "歐洲線：台北到倫敦斯坦斯特德節日 (2個月後)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "STN"
+      DepCountry1: "TW"
+      ArrCountry1: "GB"
+      Rtow: 1
+
+  - name: "歐洲線：台北到倫敦南安普敦節日 (2個月後)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "SEN"
+      DepCountry1: "TW"
+      ArrCountry1: "GB"
+      Rtow: 1
+
+  - name: "歐洲線：台北到巴黎戴高樂節日 (2個月後)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "CDG"
+      DepCountry1: "TW"
+      ArrCountry1: "FR"
+      Rtow: 1
+
+  - name: "歐洲線：台北到巴黎奧利節日 (2個月後)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "ORY"
+      DepCountry1: "TW"
+      ArrCountry1: "FR"
+      Rtow: 1
+
+  - name: "歐洲線：台北到巴黎博韋節日 (2個月後)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "BVA"
+      DepCountry1: "TW"
+      ArrCountry1: "FR"
+      Rtow: 1
+
+  - name: "歐洲線：台北到阿姆斯特丹節日 (2個月後)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "AMS"
+      DepCountry1: "TW"
+      ArrCountry1: "NL"
+      Rtow: 1
+
+  # 大陸線 - 2個月後
+  - name: "大陸線：台北到上海浦東節日 (2個月後)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "PVG"
+      DepCountry1: "TW"
+      ArrCountry1: "CN"
+      Rtow: 1
+
+  - name: "大陸線：台北到上海虹橋節日 (2個月後)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "SHA"
+      DepCountry1: "TW"
+      ArrCountry1: "CN"
+      Rtow: 1
+
+  - name: "大陸線：台北到北京首都節日 (2個月後)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "PEK"
+      DepCountry1: "TW"
+      ArrCountry1: "CN"
+      Rtow: 1
+
+  - name: "大陸線：台北到北京大興節日 (2個月後)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "PKX"
+      DepCountry1: "TW"
+      ArrCountry1: "CN"
+      Rtow: 1
+
+  # 港澳線 - 2個月後
+  - name: "港澳線：台北到香港節日 (2個月後)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "HKG"
+      DepCountry1: "TW"
+      ArrCountry1: "HK"
+      Rtow: 1
+
+  - name: "港澳線：台北到澳門節日 (2個月後)"
+    url_params:
+      Month: 2
+      DepCity1: "TPE"
+      ArrCity1: "MFM"
+      DepCountry1: "TW"
+      ArrCountry1: "MO"
+      Rtow: 1
+
+  # 東北亞航線 - 6個月後
+  - name: "東北亞：台北到東京成田節日 (6個月後)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "NRT"
+      DepCountry1: "TW"
+      ArrCountry1: "JP"
+      Rtow: 1
+
+  - name: "東北亞：台北到東京羽田節日 (6個月後)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "HND"
+      DepCountry1: "TW"
+      ArrCountry1: "JP"
+      Rtow: 1
+
+  - name: "東北亞：台北到大阪關西節日 (6個月後)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "KIX"
+      DepCountry1: "TW"
+      ArrCountry1: "JP"
+      Rtow: 1
+
+  - name: "東北亞：台北到大阪伊丹節日 (6個月後)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "ITM"
+      DepCountry1: "TW"
+      ArrCountry1: "JP"
+      Rtow: 1
+
+  - name: "東北亞：台北到首爾仁川節日 (6個月後)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "ICN"
+      DepCountry1: "TW"
+      ArrCountry1: "KR"
+      Rtow: 1
+
+  - name: "東北亞：台北到首爾金浦節日 (6個月後)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "GMP"
+      DepCountry1: "TW"
+      ArrCountry1: "KR"
+      Rtow: 1
+
+  # 東南亞航線 - 6個月後
+  - name: "東南亞：台北到曼谷蘇凡納布節日 (6個月後)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "BKK"
+      DepCountry1: "TW"
+      ArrCountry1: "TH"
+      Rtow: 1
+
+  - name: "東南亞：台北到曼谷廊曼節日 (6個月後)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "DMK"
+      DepCountry1: "TW"
+      ArrCountry1: "TH"
+      Rtow: 1
+
+  - name: "東南亞：台北到新加坡節日 (6個月後)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "SIN"
+      DepCountry1: "TW"
+      ArrCountry1: "SG"
+      Rtow: 1
+
+  # 美加線 - 6個月後
+  - name: "美加線：台北到舊金山節日 (6個月後)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "SFO"
+      DepCountry1: "TW"
+      ArrCountry1: "US"
+      Rtow: 1
+
+  - name: "美加線：台北到洛杉磯節日 (6個月後)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "LAX"
+      DepCountry1: "TW"
+      ArrCountry1: "US"
+      Rtow: 1
+
+  - name: "美加線：台北到西雅圖節日 (6個月後)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "SEA"
+      DepCountry1: "TW"
+      ArrCountry1: "US"
+      Rtow: 1
+
+  # 歐洲線 - 6個月後
+  - name: "歐洲線：台北到倫敦希斯洛節日 (6個月後)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "LHR"
+      DepCountry1: "TW"
+      ArrCountry1: "GB"
+      Rtow: 1
+
+  - name: "歐洲線：台北到倫敦蓋特威克節日 (6個月後)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "LGW"
+      DepCountry1: "TW"
+      ArrCountry1: "GB"
+      Rtow: 1
+
+  - name: "歐洲線：台北到倫敦城市機場節日 (6個月後)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "LCY"
+      DepCountry1: "TW"
+      ArrCountry1: "GB"
+      Rtow: 1
+
+  - name: "歐洲線：台北到倫敦盧頓節日 (6個月後)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "LTN"
+      DepCountry1: "TW"
+      ArrCountry1: "GB"
+      Rtow: 1
+
+  - name: "歐洲線：台北到倫敦斯坦斯特德節日 (6個月後)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "STN"
+      DepCountry1: "TW"
+      ArrCountry1: "GB"
+      Rtow: 1
+
+  - name: "歐洲線：台北到倫敦南安普敦節日 (6個月後)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "SEN"
+      DepCountry1: "TW"
+      ArrCountry1: "GB"
+      Rtow: 1
+
+  - name: "歐洲線：台北到巴黎戴高樂節日 (6個月後)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "CDG"
+      DepCountry1: "TW"
+      ArrCountry1: "FR"
+      Rtow: 1
+
+  - name: "歐洲線：台北到巴黎奧利節日 (6個月後)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "ORY"
+      DepCountry1: "TW"
+      ArrCountry1: "FR"
+      Rtow: 1
+
+  - name: "歐洲線：台北到巴黎博韋節日 (6個月後)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "BVA"
+      DepCountry1: "TW"
+      ArrCountry1: "FR"
+      Rtow: 1
+
+  - name: "歐洲線：台北到阿姆斯特丹節日 (6個月後)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "AMS"
+      DepCountry1: "TW"
+      ArrCountry1: "NL"
+      Rtow: 1
+
+  # 大陸線 - 6個月後
+  - name: "大陸線：台北到上海浦東節日 (6個月後)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "PVG"
+      DepCountry1: "TW"
+      ArrCountry1: "CN"
+      Rtow: 1
+
+  - name: "大陸線：台北到上海虹橋節日 (6個月後)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "SHA"
+      DepCountry1: "TW"
+      ArrCountry1: "CN"
+      Rtow: 1
+
+  - name: "大陸線：台北到北京首都節日 (6個月後)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "PEK"
+      DepCountry1: "TW"
+      ArrCountry1: "CN"
+      Rtow: 1
+
+  - name: "大陸線：台北到北京大興節日 (6個月後)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "PKX"
+      DepCountry1: "TW"
+      ArrCountry1: "CN"
+      Rtow: 1
+
+  # 港澳線 - 6個月後
+  - name: "港澳線：台北到香港節日 (6個月後)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "HKG"
+      DepCountry1: "TW"
+      ArrCountry1: "HK"
+      Rtow: 1
+
+  - name: "港澳線：台北到澳門節日 (6個月後)"
+    url_params:
+      Month: 6
+      DepCity1: "TPE"
+      ArrCity1: "MFM"
+      DepCountry1: "TW"
+      ArrCountry1: "MO"
+      Rtow: 1
